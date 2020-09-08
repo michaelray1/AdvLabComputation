@@ -60,7 +60,7 @@ class System:
         fin_velocity: Velocity of the particle after the timestep
         """
         force = self.charge_particle * self.elec_field + self.charge_particle * np.cross(start_vel, self.mag_field)
-        accel = force / self.mass_particle
+        accel = force/(self.mass_particle)
         fin_position = start_pos + start_vel * timestep + (1/2) * accel * timestep**2
         fin_velocity = start_vel + accel * timestep
 
@@ -98,6 +98,9 @@ class System:
 
         pos_data = []
         vel_data = []
+        pos_data.append(pos)
+        vel_data.append(vel)
+
         i = 0
         while i < num_of_iters:
             next_pos, next_vel = self.do_step(start_pos = pos, start_vel = vel, timestep = timestep)
@@ -107,4 +110,4 @@ class System:
             vel = next_vel
             i += 1
 
-        return pos_data, vel_data
+        return pos_data
