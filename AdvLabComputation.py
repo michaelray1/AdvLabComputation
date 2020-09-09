@@ -15,7 +15,7 @@ class System:
     of the particle and code in all the relevant forces and such.
     """
 
-    def __init__(self, mass_particle, charge_particle, mag_field, elec_field):
+    def __init__(self, mass_particle, charge_particle):
         """
         init function will set up the charge of the particle, the
         magnetic field, and electric field as attributes of system.
@@ -26,19 +26,14 @@ class System:
         
         charge_particle: Give a real number which is the charge of
         whatever particle we are interested in.
-
-        mag_field: Give a numpy array of dimension 3 by 1. 
-        This is the magnetic field given in cartesian coordinates
-
-        elec_field: Same thing as mag_field but for the electric field.
         """
         self.mass_particle = mass_particle
         self.charge_particle = charge_particle
-        self.mag_field = mag_field
-        self.elec_field = elec_field
 
 
-    def do_step(self, start_pos, start_vel, timestep):
+        
+
+    def do_step(self, start_pos, start_vel, timestep, elec_field, mag_field):
         """
         This function runs one step in the process of calculating the
         motion of the particle. The step first calculates the force on 
@@ -55,11 +50,17 @@ class System:
         timestep: Give a real number which is the size of the time step that
         the function will use to determine the next position.
 
+        elec_field: Give a 3 by 1 numpy array which is the electric field
+        for this iteration
+
+        mag_field: Give a 3 by 1 numpy array which is the magnetic field
+        for this iteration.
+
         Returns:
         fin_position: Where the particle is after the timestep
         fin_velocity: Velocity of the particle after the timestep
         """
-        force = self.charge_particle * self.elec_field + self.charge_particle * np.cross(start_vel, self.mag_field)
+        force = self.charge_particle * elec_field + self.charge_particle * np.cross(start_vel, mag_field)
         accel = force/(self.mass_particle)
         fin_position = start_pos + start_vel * timestep + (1/2) * accel * timestep**2
         fin_velocity = start_vel + accel * timestep
@@ -67,7 +68,9 @@ class System:
         return fin_position, fin_velocity
 
 
-    def solve_path(self, timelength, num_of_iters, init_pos, init_vel):
+
+    
+    def solve_path(self, timelength, num_of_iters, init_pos, init_vel, config):
         """
         Ths function will map out the motion of the particle
         by iterating the do_step function.
@@ -84,6 +87,16 @@ class System:
         
         init_vel: Give a numpy array of dimension 3 by 1. This represents
         the velocity the particle starts with.
+        
+        config: Give a string which is equal to one of the options
+        below. This indicates what magnetic/electric field configuration
+        we are working with. Options for configuration are:
+        1. const_mag
+        2. mag_dipole
+        3. mag_bottle
+        4. const_mag_const_elec
+        These 4 options respectively implement the 4 different configurations
+        needed to answer all questions in the lab.
 
         Returns:
         pos_data: a list of all the positions that the particle was calculated
@@ -103,7 +116,26 @@ class System:
 
         i = 0
         while i < num_of_iters:
-            next_pos, next_vel = self.do_step(start_pos = pos, start_vel = vel, timestep = timestep)
+            if config == 'const_mag':
+                e_field = np.array([0,0,0])
+                b_field = np.array([0,0,10**(-4)])
+
+            elif config == 'mag_dipole':
+                mu = input("Enter a 3 x 1 numpy array representing the magnetic dipole vector written in cartesian coords: ")
+                e_field = np.array([0,0,0])
+                b_field = self.mag_dipole_field(r = pos, mu = mu)
+
+            elif config == 'mag_bottle':
+                pass
+
+            elif config == 'const_mag_const_elec':
+                e_field = np.array([-0.01, 0, 0])
+                b_field = np.array([0,0,10**(-4)])
+
+            else:
+                raise ValueError("Configuration is not valid. Please input one of the following for config: const_mag, mag_dipole, mag_bottle, or const_mag_const_elec.")
+            
+            next_pos, next_vel = self.do_step(start_pos = pos, start_vel = vel, timestep = timestep, elec_field = e_field, mag_field = b_field)
             pos_data.append(next_pos)
             vel_data.append(next_vel)
             pos = next_pos
@@ -111,3 +143,31 @@ class System:
             i += 1
 
         return pos_data
+
+    
+
+
+    def mag_dipole_field(self, r, mu):
+        """
+        This function numerically solves for the magnetic field of a dipole
+        mu at a position r.
+
+        Parameters:
+        r - Give a 3 by 1 numpy array which represents the point at which
+        you want to evaluate the dipole field. Give this in cartesian
+        ccords
+
+        mu - Give a 3 by 1 numpy array which is the dipole vector in
+        cartesian coords.
+
+        
+
+        Returns:
+        The B field corresponding to the point r due to the dipole mu.
+        """
+
+        mag_mu = np.linalg.norm(mu)
+        mag_r = np.linalg.norm(r)
+        b_field = (mag_mu / (4 * np.pi)) * ((3 * r * np.dot(mu, r) / (mag_r**5)) - mu / (mag_r**3))
+
+        return b_field
