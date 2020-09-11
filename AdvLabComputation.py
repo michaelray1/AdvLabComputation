@@ -93,9 +93,10 @@ class System:
         we are working with. Options for configuration are:
         1. const_mag
         2. mag_dipole
-        3. mag_bottle
-        4. const_mag_const_elec
-        These 4 options respectively implement the 4 different configurations
+        3. mag_dipole_23
+        4. mag_bottle
+        5. const_mag_const_elec
+        These 5 options implement the 5 different configurations
         needed to answer all questions in the lab.
 
         Returns:
@@ -121,12 +122,21 @@ class System:
                 b_field = np.array([0,0,10**(-4)])
 
             elif config == 'mag_dipole':
-                mu = input("Enter a 3 x 1 numpy array representing the magnetic dipole vector written in cartesian coords: ")
+                mu = np.array([0, 0, 10**4])
                 e_field = np.array([0,0,0])
-                b_field = self.mag_dipole_field(r = pos, mu = mu)
+                b_field = self.mag_dipole_field(r = pos, position = np.array([0,0,0]), mu = mu)
 
+            elif config == 'mag_dipole_23':
+                mu = np.array([0, 10**4 * np.sin(23 * (np.pi/180)), 10**4 * np.cos(23 * (np.pi/180))])
+                e_field = np.array([0,0,0])
+                b_field = self.mag_dipole_field(r = pos, position = np.array([0,0,0]), mu = mu)
+                
             elif config == 'mag_bottle':
-                pass
+                mu = np.array([0, 0, 10**4])
+                e_field = np.array([0,0,0])
+                first_b = self.mag_dipole_field(r = pos, position = np.array([0, 0, 10]), mu = mu)
+                second_b = self.mag_dipole_field(r = pos, position = np.array([0, 0, -10]), mu = mu)
+                b_field = first_b + second_b
 
             elif config == 'const_mag_const_elec':
                 e_field = np.array([-0.01, 0, 0])
@@ -147,7 +157,7 @@ class System:
     
 
 
-    def mag_dipole_field(self, r, mu):
+    def mag_dipole_field(self, r, position = np.array([0,0,0]), mu = np.array([0,0,0])):
         """
         This function numerically solves for the magnetic field of a dipole
         mu at a position r.
@@ -157,8 +167,12 @@ class System:
         you want to evaluate the dipole field. Give this in cartesian
         ccords
 
+        position - Give a 3 by 1 numpy array which represents the point at
+        which the dipole is located. This is in cartesian coords. Default
+        value is the origin.
+
         mu - Give a 3 by 1 numpy array which is the dipole vector in
-        cartesian coords.
+        cartesian coords. Default is no dipole at all.
 
         
 
@@ -167,7 +181,7 @@ class System:
         """
 
         mag_mu = np.linalg.norm(mu)
-        mag_r = np.linalg.norm(r)
-        b_field = (mag_mu / (4 * np.pi)) * ((3 * r * np.dot(mu, r) / (mag_r**5)) - mu / (mag_r**3))
+        mag_r = np.linalg.norm(r - position)
+        b_field = (mag_mu / (4 * np.pi)) * ((3 * (r - position) * np.dot(mu, r - position) / (mag_r**5)) - mu / (mag_r**3))
 
         return b_field
