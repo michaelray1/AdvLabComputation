@@ -154,7 +154,7 @@ class System:
 
         return pos_data
 
-    
+
 
 
     def mag_dipole_field(self, r, position = np.array([0,0,0]), mu = np.array([0,0,0])):
@@ -185,3 +185,77 @@ class System:
         b_field = (mag_mu / (4 * np.pi)) * ((3 * (r - position) * np.dot(mu, r - position) / (mag_r**5)) - mu / (mag_r**3))
 
         return b_field
+
+
+
+    def make_field_lines(self, config, box_length):
+        """
+        This function will take in a field configuration and produce
+        a numpy array which has size 3 by 2 by 1000 where 3 represents the
+        3 components of the position or field  in cartesian coordinates, 
+        2 represents the fact that we need the position and vector field,
+        and 1000 is the number of positions at which we will calculate
+        the field.
+
+        Parameters:
+        config- Give a string which is equal to one of the options                                                              
+        below. This indicates what magnetic/electric field configuration                                                        
+        we are working with. Options for configuration are:                                                                     
+        1. const_mag                                                                                                            
+        2. mag_dipole                                                                                                           
+        3. mag_dipole_23                                                                                                        
+        4. mag_bottle                                                                                                           
+        5. const_mag_const_elec                                                                                                 
+        These 5 options implement the 5 different configurations                                                                
+        needed to answer all questions in the lab.
+        
+        box_length- give a real number which is the size of the box
+        you want to simulate. 1000 field lines will be produced which
+        represent the box length cut into 10 segments along each of
+        the 3 cartesian directions.
+
+        Returns
+        A numpy array of shape 3 by 2 by 1000. The 3 represents the
+        three cartesian coordinates. The 2 represents the fact
+        that we need position data as well as field data. The
+        1000 is the number of points at which we calculate the 
+        field lines.
+        """
+
+        step = box_length/10
+
+        #Set up the positions at which we will calculate the field
+        field = np.empty([3, 2, 1000])
+        for i in range(10):
+            for j in range(10):
+                for k in range(10):
+                    field[:, 0, 100*i + 10*j + k] = [-box_length/2 + i*step, -box_length/2 + j*step, -box_length/2 + k*step]
+        
+        if config == 'const_mag':
+            for i in range(len(field[0, 0, :])):
+                field[:, 1, i] = np.array([0,0,10**(-4)])
+
+        elif config == 'mag_dipole':
+            mu = np.array([0, 0, 10**4])
+            for i in range(len(field[0, 0, :])):
+                field[:, 1, i] = self.mag_dipole_field(r = field[:, 0, i], position = np.array([0,0,0]), mu = mu)
+
+        elif config == 'mag_dipole_23':
+            mu = np.array([0, 10**4 * np.sin(23 * (np.pi/180)), 10**4 * np.cos(23 * (np.pi/180))])
+            for i in range(len(field[0, 0, :])):
+                field[:, 1, i] = self.mag_dipole_field(r = field[:, 0, i], position = np.array([0,0,0]), mu = mu)
+
+        elif config == 'mag_bottle':
+            mu = np.array([0, 0, 10**4])
+            for i in range(len(field[0, 0, :])):
+                first_field = self.mag_dipole_field(r = field[:, 0, i], position = np.array([0, 0, -10]), mu = mu)
+                second_field = self.mag_dipole_field(r = field[:, 0, i], position = np.array([0, 0, 10]), mu = mu)
+                field[:, 1, i] = first_field + second_field
+
+        else:
+            raise ValueError("Configuration is not valid. Please input one of the following for config: const_mag, mag_dipol\
+e, mag_bottle, or const_mag_const_elec.")
+
+
+
+        return field
