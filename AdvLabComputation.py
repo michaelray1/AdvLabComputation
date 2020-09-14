@@ -7,6 +7,7 @@ notebook.
 """
 
 import numpy as np
+import scipy.integrate as spi
 
 
 class System:
@@ -152,7 +153,7 @@ class System:
             vel = next_vel
             i += 1
 
-        return pos_data
+        return pos_data, vel_data
 
 
 
@@ -180,21 +181,22 @@ class System:
         The B field corresponding to the point r due to the dipole mu.
         """
 
+        mu0 = 4 * np.pi * 10**(-7)
         mag_mu = np.linalg.norm(mu)
         mag_r = np.linalg.norm(r - position)
-        b_field = (mag_mu / (4 * np.pi)) * ((3 * (r - position) * np.dot(mu, r - position) / (mag_r**5)) - mu / (mag_r**3))
+        b_field = (mu0 / (4 * np.pi)) * ((3 * (r - position) * np.dot(mu, r - position) / (mag_r**5)) - mu / (mag_r**3))
 
         return b_field
 
 
 
-    def make_field_lines(self, config, box_length):
+    def make_field_lines(self, config, box_length = 20, box_cuts = 5):
         """
         This function will take in a field configuration and produce
-        a numpy array which has size 3 by 2 by 1000 where 3 represents the
+        a numpy array which has size 3 by 2 by box_cuts**3 where 3 represents the
         3 components of the position or field  in cartesian coordinates, 
         2 represents the fact that we need the position and vector field,
-        and 1000 is the number of positions at which we will calculate
+        and box_cuts**3 is the number of positions at which we will calculate
         the field.
 
         Parameters:
@@ -210,26 +212,31 @@ class System:
         needed to answer all questions in the lab.
         
         box_length- give a real number which is the size of the box
-        you want to simulate. 1000 field lines will be produced which
+        you want to simulate. 64 field lines will be produced which
         represent the box length cut into 10 segments along each of
-        the 3 cartesian directions.
+        the 3 cartesian directions. Default value is 20 meters.
+
+        box_cuts- Give an integer which represents the number of 
+        time we will cut up the box in order to calculate the field.
 
         Returns
-        A numpy array of shape 3 by 2 by 1000. The 3 represents the
+        A numpy array of shape 3 by 2 by box_cuts**3. The 3 represents the
         three cartesian coordinates. The 2 represents the fact
         that we need position data as well as field data. The
-        1000 is the number of points at which we calculate the 
+        box_cuts**3 is the number of points at which we calculate the 
         field lines.
         """
 
-        step = box_length/10
+        step = box_length/box_cuts
 
         #Set up the positions at which we will calculate the field
-        field = np.empty([3, 2, 1000])
-        for i in range(10):
-            for j in range(10):
-                for k in range(10):
-                    field[:, 0, 100*i + 10*j + k] = [-box_length/2 + i*step, -box_length/2 + j*step, -box_length/2 + k*step]
+        field = np.empty([3, 2, box_cuts**3])
+
+        
+        for i in range(box_cuts):
+            for j in range(box_cuts):
+                for k in range(box_cuts):
+                    field[:, 0, box_cuts**2 * i + box_cuts * j + k] = [-box_length/2 + i*step, -box_length/2 + j*step, -box_length/2 + k*step]
         
         if config == 'const_mag':
             for i in range(len(field[0, 0, :])):
