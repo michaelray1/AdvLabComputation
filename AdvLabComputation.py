@@ -128,7 +128,7 @@ class System:
                 b_field = self.mag_dipole_field(r = pos, position = np.array([0,0,0]), mu = mu)
 
             elif config == 'mag_dipole_23':
-                mu = np.array([0, 10**4 * np.sin(23 * (np.pi/180)), 10**4 * np.cos(23 * (np.pi/180))])
+                mu = np.array([10**4 * np.sin(23 * (np.pi/180)), 0, 10**4 * np.cos(23 * (np.pi/180))])
                 e_field = np.array([0,0,0])
                 b_field = self.mag_dipole_field(r = pos, position = np.array([0,0,0]), mu = mu)
                 
@@ -140,8 +140,8 @@ class System:
                 b_field = first_b + second_b
 
             elif config == 'const_mag_const_elec':
-                e_field = np.array([-0.01, 0, 0])
-                b_field = np.array([0,0,10**(-4)])
+                e_field = np.array([-10**(-2), 0, 0])
+                b_field = np.array([0,0,10**(-5)])
 
             else:
                 raise ValueError("Configuration is not valid. Please input one of the following for config: const_mag, mag_dipole, mag_bottle, or const_mag_const_elec.")
@@ -153,7 +153,7 @@ class System:
             vel = next_vel
             i += 1
 
-        return pos_data, vel_data
+        return np.array(pos_data, vel_data)
 
 
 
@@ -248,7 +248,7 @@ class System:
                 field[:, 1, i] = self.mag_dipole_field(r = field[:, 0, i], position = np.array([0,0,0]), mu = mu)
 
         elif config == 'mag_dipole_23':
-            mu = np.array([0, 10**4 * np.sin(23 * (np.pi/180)), 10**4 * np.cos(23 * (np.pi/180))])
+            mu = np.array([10**4 * np.sin(23 * (np.pi/180)), 0, 10**4 * np.cos(23 * (np.pi/180))])
             for i in range(len(field[0, 0, :])):
                 field[:, 1, i] = self.mag_dipole_field(r = field[:, 0, i], position = np.array([0,0,0]), mu = mu)
 
