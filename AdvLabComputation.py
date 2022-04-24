@@ -153,7 +153,7 @@ class System:
             vel = next_vel
             i += 1
 
-        return np.array(pos_data, vel_data)
+        return np.array(pos_data), np.array(vel_data)
 
 
 
